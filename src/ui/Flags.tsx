@@ -201,3 +201,41 @@ function Suggestions({ names, onPick }: { names: string[]; onPick: (name: string
     </span>
   );
 }
+
+/**
+ * Read-only list of a species' abilities and innates for this run: the recorded ones, or the
+ * game defaults (marked as such) when nothing is recorded yet. Names carry tooltips.
+ */
+export function AbilitySummary({ dex, run, speciesKey }: { dex: Dex; run: Run; speciesKey: string }) {
+  const ev = evaluateFor(dex, run, speciesKey);
+  if (!ev) return null;
+  const row = (label: string, slots: Evaluation["abilities"]) => (
+    <div className="summary-row">
+      <span className="label">{label}</span>
+      {slots.map((s, i) => (
+        <span key={i} className="summary-slot">
+          {i > 0 && <span className="muted"> · </span>}
+          {!s ? (
+            <span className="muted">—</span>
+          ) : s.ability.index !== null ? (
+            <a href={href("abilities", s.ability.ref)} data-ability={s.ability.ref} className={`rule-${s.flag.rule}`}>
+              {s.flag.rule === "banned" ? "⛔ " : s.flag.rule === "limited" ? "⚠ " : ""}
+              {s.ability.name}
+            </a>
+          ) : (
+            <span className="muted" title="Not an ability in this data version">
+              {s.ability.name}?
+            </span>
+          )}
+        </span>
+      ))}
+    </div>
+  );
+  return (
+    <div className={`ability-summary${ev.recorded ? "" : " dimmed"}`}>
+      {row("Abilities", ev.abilities)}
+      {row("Innates", ev.innates)}
+      {!ev.recorded && <div className="hint">Game defaults, randomized abilities not recorded.</div>}
+    </div>
+  );
+}

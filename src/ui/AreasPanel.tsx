@@ -3,13 +3,14 @@ import { bstTier } from "../../config/bstTiers.ts";
 import { familyDuplicates } from "../data/family.ts";
 import type { Dex } from "../data/load.ts";
 import type { Area, EncounterMethod } from "../data/types.ts";
-import type { AreaRecord, Run } from "../run/model.ts";
+import type { AreaRecord, Place, Run } from "../run/model.ts";
 import { catchMon, placeOf, reopenArea, rerollEncounter, setAreaNotes } from "../run/model.ts";
 import { runStore } from "../run/store.ts";
 import type { Option } from "./Autocomplete.tsx";
 import { Autocomplete } from "./Autocomplete.tsx";
 import { AbilityLink, matchesQuery, PokeBall, SpeciesLink, Sprite, Types, useListKeys, useReplay } from "./common.tsx";
-import { AbilityEditor, evaluateFor, Verdict } from "./Flags.tsx";
+import { AbilityEditor, AbilitySummary, evaluateFor, Verdict } from "./Flags.tsx";
+import { BaseStats, TierBadge } from "./SpeciesPanel.tsx";
 import { MonRow, speciesName } from "./Mons.tsx";
 import { NewRunForm } from "./RunPanel.tsx";
 import { href } from "./route.ts";
@@ -104,13 +105,12 @@ function areaBall(run: Run | null, rec: AreaRecord | undefined): "open" | "dead"
 
 function AreaDetail({ dex, run, area }: { dex: Dex; run: Run; area: Area }) {
   const rec = run.areas[area.key] ?? {};
-  const topRef = useReplay<HTMLDivElement>(area.key, "scan");
   const plateRef = useReplay<HTMLDivElement>(area.key, "flash");
   const restRef = useReplay<HTMLDivElement>(area.key, "rise");
 
   return (
     <article className="detail">
-      <div className="ability-top" ref={topRef}>
+      <div className="ability-top">
         <div className="nameplate" ref={plateRef}>
           <span>{area.name}</span>
         </div>
@@ -312,23 +312,48 @@ function EncounterPreview({ dex, run, speciesKey }: { dex: Dex; run: Run; specie
 function ResultPlate({ dex, run, area }: { dex: Dex; run: Run; area: Area }) {
   const rec = run.areas[area.key];
   const place = rec.monId ? placeOf(run, rec.monId) : null;
+  const index = rec.species ? dex.speciesByKey.get(rec.species) : undefined;
+  const known = !!rec.species && index !== undefined;
+  const [tab, setTab] = useState<"overview" | "abilities">("overview");
 
   return (
     <section className="plate">
-      <h2>Caught</h2>
-      {rec.monId && place ? (
-        <>
-          <ul className="mons">
-            <MonRow dex={dex} run={run} monId={rec.monId} place={place} />
-          </ul>
-          <p className="muted">In your {place}.</p>
-        </>
-      ) : (
+      <div className="caught-head">
+        <h2>Caught</h2>
+        {known && (
+          <div className="segmented caught-tabs" role="tablist" aria-label="Caught Pokémon">
+            {(["overview", "abilities"] as const).map((t) => (
+              <button
+                key={t}
+                role="tab"
+                aria-selected={tab === t}
+                className={`btn small${tab === t ? " on" : ""}`}
+                onClick={() => setTab(t)}
+              >
+                {t === "overview" ? "Overview" : "Abilities"}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {!known ? (
         <p>{rec.species ? speciesName(dex, rec.species) : "Nothing recorded."}</p>
+      ) : tab === "overview" ? (
+        <CaughtOverview dex={dex} run={run} index={index} monId={rec.monId} place={place} />
+      ) : (
+        <>
+          <Verdict dex={dex} run={run} ev={evaluateFor(dex, run, rec.species!)} />
+          <AbilityEditor key={rec.species} dex={dex} run={run} speciesKey={rec.species!} />
+        </>
       )}
-      <div className="actions">
+      <div className="caught-actions">
+        {rec.monId && place && (
+          <ul className="mons">
+            <MonRow dex={dex} run={run} monId={rec.monId} place={place} actionsOnly />
+          </ul>
+        )}
         <button
-          className="btn"
+          className="btn small"
           onClick={() => {
             if (rec.monId && !confirm("Remove this catch? The Pokémon is taken out of the run and the route opens again.")) return;
             runStore.update((r) => reopenArea(r, area.key));
@@ -338,6 +363,66 @@ function ResultPlate({ dex, run, area }: { dex: Dex; run: Run; area: Area }) {
         </button>
       </div>
     </section>
+  );
+}
+
+/** The visual side of a catch: sprite, types, stat total and base stats, recorded abilities. */
+function CaughtOverview({
+  dex,
+  run,
+  index,
+  monId,
+  place,
+}: {
+  dex: Dex;
+  run: Run;
+  index: number;
+  monId?: string;
+  place: Place | null;
+}) {
+  const s = dex.species[index];
+  const mon = monId ? run.mons[monId] : undefined;
+  const total = s.base.reduce((a, b) => a + b, 0);
+  return (
+    <div className="caught-overview">
+      <div className="caught-top">
+        <div className="sprite-circle small">
+          <Sprite dex={dex} speciesKey={s.key} scale={2} className="reveal" key={s.key} />
+        </div>
+        <div className="caught-info">
+          <dl className="caught-facts">
+            <div>
+              <dt className="label">Name</dt>
+              <dd>
+                {mon?.nickname && <span className="caught-nick">{mon.nickname} </span>}
+                <SpeciesLink dex={dex} index={index} />
+              </dd>
+            </div>
+            <div>
+              <dt className="label">Type</dt>
+              <dd>
+                <Types dex={dex} types={s.types} />
+              </dd>
+            </div>
+            <div>
+              <dt className="label">Base Stat Total</dt>
+              <dd>
+                {total} <TierBadge total={total} />
+              </dd>
+            </div>
+            {place && (
+              <div>
+                <dt className="label">Where</dt>
+                <dd>{place === "graveyard" ? "Graveyard ✝" : place === "party" ? "Party" : "Box"}</dd>
+              </div>
+            )}
+          </dl>
+          {s.dexText && <p className="caught-bio">{s.dexText}</p>}
+        </div>
+      </div>
+      <BaseStats base={s.base} />
+      <AbilitySummary dex={dex} run={run} speciesKey={s.key} />
+    </div>
   );
 }
 

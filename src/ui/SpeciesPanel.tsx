@@ -157,9 +157,6 @@ function SpeciesDetail({ dex, index }: { dex: Dex; index: number }) {
   const plateRef = useReplay<HTMLDivElement>(s.key, "flash");
   const restRef = useReplay<HTMLDivElement>(s.key, "rise");
   const spriteRef = useReplay<HTMLDivElement>(s.key, "reveal");
-  // Stat numbers and bars glide to the new species' values.
-  const shownBase = useTween(s.base, { ms: 450 });
-  const shownTotal = Math.round(shownBase.reduce((a, b) => a + b, 0));
   useEffect(() => {
     playCry(s.key);
   }, [s.key]);
@@ -217,30 +214,7 @@ function SpeciesDetail({ dex, index }: { dex: Dex; index: number }) {
       <div className="dex-sections" ref={restRef}>
         <section className="plate">
           <h2>Base stats</h2>
-          <div className="stats-row">
-            <table className="stats">
-              <tbody>
-                {s.base.map((v, i) => (
-                  <tr key={i}>
-                    <th>{STAT_NAMES[i]}</th>
-                    <td className="num">{Math.round(shownBase[i])}</td>
-                    <td className="bar-cell">
-                      <div
-                        className="bar"
-                        style={{ width: `${Math.min(100, (Math.max(0, shownBase[i]) / 200) * 100)}%`, background: statColor(v) }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <th>Total</th>
-                  <td className="num">{shownTotal}</td>
-                  <td />
-                </tr>
-              </tbody>
-            </table>
-            <StatRadar base={s.base} />
-          </div>
+          <BaseStats base={s.base} />
         </section>
         <section className="plate">
           <h2>Randomized abilities</h2>
@@ -381,12 +355,44 @@ function MoveTable({ dex, moves, labelHeader }: { dex: Dex; moves: { m: number; 
   );
 }
 
-function TierBadge({ total }: { total: number }) {
+export function TierBadge({ total }: { total: number }) {
   const tier = bstTier(total);
   return (
     <span className={`tier tier-${tier}`} title={`Base Stat Total ${total}: tier ${tier}`}>
       {tier}
     </span>
+  );
+}
+
+/** Base stat table with bars, plus the radar. Numbers and bars glide to new values. */
+export function BaseStats({ base }: { base: number[] }) {
+  const shownBase = useTween(base, { ms: 450 });
+  const shownTotal = Math.round(shownBase.reduce((a, b) => a + b, 0));
+  return (
+    <div className="stats-row">
+      <table className="stats">
+        <tbody>
+          {base.map((v, i) => (
+            <tr key={i}>
+              <th>{STAT_NAMES[i]}</th>
+              <td className="num">{Math.round(shownBase[i])}</td>
+              <td className="bar-cell">
+                <div
+                  className="bar"
+                  style={{ width: `${Math.min(100, (Math.max(0, shownBase[i]) / 200) * 100)}%`, background: statColor(v) }}
+                />
+              </td>
+            </tr>
+          ))}
+          <tr>
+            <th>Total</th>
+            <td className="num">{shownTotal}</td>
+            <td />
+          </tr>
+        </tbody>
+      </table>
+      <StatRadar base={base} />
+    </div>
   );
 }
 

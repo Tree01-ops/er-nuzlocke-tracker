@@ -85,12 +85,11 @@ function RuleMark({ rule }: { rule: AbilityRule }) {
 function AbilityDetail({ dex, index, run }: { dex: Dex; index: number; run: Run | null }) {
   const a = dex.abilities[index];
   const users = dex.abilityUsers.get(index) ?? { abis: [], inns: [] };
-  const topRef = useReplay<HTMLDivElement>(a.key, "scan");
   const plateRef = useReplay<HTMLDivElement>(a.key, "flash");
   const restRef = useReplay<HTMLDivElement>(a.key, "rise");
   return (
     <article className="detail">
-      <div className="ability-top" ref={topRef}>
+      <div className="ability-top">
         <div className="nameplate" ref={plateRef}>
           <span>{a.name}</span>
         </div>

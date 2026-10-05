@@ -1149,8 +1149,8 @@ details.plate[open] summary::after {
 }
 .editor-row {
   display: grid;
-  grid-template-columns: 70px repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: 80px repeat(3, minmax(0, 1fr));
+  gap: 8px 12px;
   align-items: start;
 }
 .editor-row > .label {
@@ -1302,7 +1302,7 @@ h2.spaced {
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Screen refresh: a soft glowing line sweeps down over the top area and the content settles in.
+/* Screen refresh (species page only): a soft glowing line sweeps down over the top area and the content settles in.
    Nothing is clipped, so the sprite is never cut in half mid-way. */
 .scan {
   animation: dex-settle 420ms var(--ease-out);
@@ -1720,4 +1720,126 @@ h2.spaced {
   textarea {
     font-size: 16px;
   }
+}
+
+/* Recorded abilities under a Pokémon in the Run panel. */
+.ability-summary {
+  margin: 4px 0 0 24px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.ability-summary .label {
+  display: inline-block;
+  min-width: 70px;
+  color: var(--muted);
+}
+.ability-summary .rule-banned {
+  color: #8a1010;
+}
+.ability-summary .rule-limited {
+  color: #6a4a00;
+}
+
+/* Caught plate on an area: Overview / Abilities tabs. */
+.caught-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.caught-head h2 {
+  margin: 0;
+}
+.caught-tabs {
+  margin: 0;
+}
+/* Box / Fainted on the left, Remove catch on the right, under a divider. */
+.caught-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #ecece4;
+}
+.caught-actions .mons {
+  flex: 1;
+  margin: 0;
+}
+.caught-actions .mon {
+  padding: 0;
+  border: none;
+}
+.caught-actions .mon-actions,
+.caught-actions .mon-form {
+  margin: 0;
+}
+.caught-top {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+.sprite-circle.small {
+  width: 170px;
+  height: 170px;
+}
+.caught-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+/* Label above value, two pairs per row. */
+.caught-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  margin: 0;
+}
+.caught-facts dt {
+  font-size: 12px;
+}
+.caught-facts dd {
+  margin: 2px 0 0;
+}
+.caught-nick {
+  font-weight: bold;
+}
+/* Pokédex entry text, like the species page's entry plate. */
+.caught-bio {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 15px;
+  line-height: 1.5;
+  background: #fbfbf6;
+  border: 1px solid #d8d8cc;
+  border-left: 4px solid var(--red);
+  border-radius: 6px;
+}
+.caught-overview .ability-summary {
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+@media (max-width: 760px) {
+  .caught-top {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .caught-info {
+    width: 100%;
+  }
+}
+.mon.actions-only .mon-main {
+  display: none;
+}
+/* Keep bars and radar together instead of at opposite edges. */
+.caught-overview .stats-row {
+  justify-content: space-evenly;
+}
+.caught-overview .stats-row .stats {
+  flex: 0 1 220px;
 }

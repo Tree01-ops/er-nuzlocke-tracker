@@ -4,7 +4,7 @@ import type { Place, Run } from "../run/model.ts";
 import { killMon, moveMon, PARTY_SIZE, releaseMon, renameMon, shiftInParty } from "../run/model.ts";
 import { runStore } from "../run/store.ts";
 import { Sprite, Types } from "./common.tsx";
-import { evaluateFor, VerdictMark } from "./Flags.tsx";
+import { AbilitySummary, evaluateFor, VerdictMark } from "./Flags.tsx";
 import { href } from "./route.ts";
 
 /** Display name of a species key in this data version, or a readable fallback. */
@@ -16,9 +16,24 @@ export function speciesName(dex: Dex, key: string): string {
 
 /**
  * One Pokémon with its actions. `full` adds reordering and nickname editing (Run panel);
- * the rail uses the compact form.
+ * the rail uses the compact form. `actionsOnly` drops the icon and name, for places that
+ * already show them.
  */
-export function MonRow({ dex, run, monId, place, full }: { dex: Dex; run: Run; monId: string; place: Place; full?: boolean }) {
+export function MonRow({
+  dex,
+  run,
+  monId,
+  place,
+  full,
+  actionsOnly,
+}: {
+  dex: Dex;
+  run: Run;
+  monId: string;
+  place: Place;
+  full?: boolean;
+  actionsOnly?: boolean;
+}) {
   const mon = run.mons[monId];
   const [mode, setMode] = useState<"idle" | "dying" | "renaming">("idle");
   const [text, setText] = useState("");
@@ -32,8 +47,8 @@ export function MonRow({ dex, run, monId, place, full }: { dex: Dex; run: Run; m
   const update = runStore.update;
 
   return (
-    <li className={`mon ${place}`}>
-      <div className="mon-main">
+    <li className={`mon ${place}${actionsOnly ? " actions-only" : ""}`}>
+      <div className="mon-main" hidden={actionsOnly}>
         <Sprite dex={dex} speciesKey={mon.species} kind="icon" bob={place === "party"} />
         <div className="mon-names">
           <span className="mon-nick">
@@ -47,6 +62,7 @@ export function MonRow({ dex, run, monId, place, full }: { dex: Dex; run: Run; m
         {full && species && <Types dex={dex} types={species.types} />}
       </div>
 
+      {full && species && <AbilitySummary dex={dex} run={run} speciesKey={mon.species} />}
       {grave?.cause && <div className="mon-cause">✝ {grave.cause}</div>}
 
       {mode === "idle" ? (
